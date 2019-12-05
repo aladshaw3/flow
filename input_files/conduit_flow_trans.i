@@ -1,8 +1,13 @@
-# This input file tests outflow boundary conditions for the incompressible NS equations.
+# This input file tests various options for the incompressible NS equations in a channel.
 
 [GlobalParams]
-  gravity = '0 0 0'
-  integrate_p_by_parts = true
+  gravity = '0 0 0'				#gravity accel for body force
+  integrate_p_by_parts = true	#how to include the pressure gradient term (not sure what it does, but solves when true)
+  supg = true 					#activates SUPG stabilization
+  alpha = 1.0 					#stabilization multiplicative correction factor (0 < alpha <= 1)
+  laplace = true				#whether or not viscous term is in laplace form
+  convective_term = true		#whether or not to include advective/convective term
+  transient_term = true			#whether or not to include time derivative in supg correction (must be true if simulation is transient)
 []
 
 [Mesh]
@@ -22,24 +27,34 @@
   [./vel_x]
     order = SECOND
     family = LAGRANGE
+    initial_condition = 0
   [../]
   [./vel_y]
     order = SECOND
     family = LAGRANGE
+    initial_condition = 0
   [../]
   [./p]
     order = FIRST
     family = LAGRANGE
+    initial_condition = 0
   [../]
 []
 
 [Kernels]
+  #Continuity Equ
   [./mass]
     type = INSMass
     variable = p
     u = vel_x
     v = vel_y
     p = p
+  [../]
+
+  #Conservation of momentum equ in x (with time derivative)
+  [./x_momentum_time]
+    type = INSMomentumTimeDerivative
+    variable = vel_x
   [../]
   [./x_momentum_space]
     type = INSMomentumLaplaceForm
@@ -48,6 +63,12 @@
     v = vel_y
     p = p
     component = 0
+  [../]
+
+  #Conservation of momentum equ in y (with time derivative)
+  [./y_momentum_time]
+    type = INSMomentumTimeDerivative
+    variable = vel_y
   [../]
   [./y_momentum_space]
     type = INSMomentumLaplaceForm
@@ -85,7 +106,8 @@
     type = GenericConstantMaterial
     block = 0
     prop_names = 'rho mu'
-    prop_values = '1  1'
+    #              kg/m^3  kg/m/s
+    prop_values = '1000.0  0.001'
   [../]
 []
 
@@ -98,11 +120,14 @@
 []
 
 [Executioner]
-  type = Steady
+  type = Transient
+  scheme = bdf2
   petsc_options = '-snes_converged_reason'
   petsc_options_iname ='-ksp_type -pc_type -sub_pc_type -snes_max_it -sub_pc_factor_shift_type -pc_asm_overlap -snes_atol -snes_rtol'
   petsc_options_value = 'gmres asm lu 100 NONZERO 2 1E-14 1E-12'
-  line_search = bt
+
+  #NOTE: turning off line search can help converge for high Renolds number
+  line_search = none
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-4
   nl_rel_step_tol = 1e-10
@@ -110,6 +135,16 @@
   nl_max_its = 10
   l_tol = 1e-6
   l_max_its = 300
+
+  start_time = 0.0
+  end_time = 10.0
+  dtmax = 1.0
+
+  [./TimeStepper]
+	type = SolutionTimeAdaptiveDT
+#    type = ConstantDT
+    dt = 0.01
+  [../]
 []
 
 [Outputs]

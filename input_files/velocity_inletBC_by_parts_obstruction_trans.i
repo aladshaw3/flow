@@ -6,30 +6,26 @@
 []
 
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  xmin = -2.0
-  xmax = 5.0
-  ymin = -2.0
-  ymax = 2.0
-  nx = 30
-  ny = 10
-  elem_type = QUAD9
+	file = 2D-Flow-Converted.unv
+	boundary_name = 'inlet outlet top bottom object'
 []
 
 
 [Variables]
   [./vel_x]
-    order = SECOND
+    order = FIRST
     family = LAGRANGE
+    initial_condition = 0
   [../]
   [./vel_y]
-    order = SECOND
+    order = FIRST
     family = LAGRANGE
+    initial_condition = 0
   [../]
   [./p]
     order = FIRST
     family = LAGRANGE
+    initial_condition = 0
   [../]
 []
 
@@ -41,6 +37,11 @@
     v = vel_y
     p = p
   [../]
+
+  [./x_momentum_time]
+    type = INSMomentumTimeDerivative
+    variable = vel_x
+  [../]
   [./x_momentum_space]
     type = INSMomentumLaplaceForm
     variable = vel_x
@@ -48,6 +49,11 @@
     v = vel_y
     p = p
     component = 0
+  [../]
+
+  [./y_momentum_time]
+    type = INSMomentumTimeDerivative
+    variable = vel_y
   [../]
   [./y_momentum_space]
     type = INSMomentumLaplaceForm
@@ -63,19 +69,19 @@
   [./x_no_slip]
     type = DirichletBC
     variable = vel_x
-    boundary = 'top bottom'
+    boundary = 'top bottom object'
     value = 0.0
   [../]
   [./y_no_slip]
     type = DirichletBC
     variable = vel_y
-    boundary = 'left top bottom'
+    boundary = 'inlet top bottom object'
     value = 0.0
   [../]
   [./x_inlet]
     type = FunctionDirichletBC
     variable = vel_x
-    boundary = 'left'
+    boundary = 'inlet'
     function = 'inlet_func'
   [../]
 []
@@ -98,7 +104,8 @@
 []
 
 [Executioner]
-  type = Steady
+  type = Transient
+  scheme = bdf2
   petsc_options = '-snes_converged_reason'
   petsc_options_iname ='-ksp_type -pc_type -sub_pc_type -snes_max_it -sub_pc_factor_shift_type -pc_asm_overlap -snes_atol -snes_rtol'
   petsc_options_value = 'gmres asm lu 100 NONZERO 2 1E-14 1E-12'
@@ -110,11 +117,21 @@
   nl_max_its = 10
   l_tol = 1e-6
   l_max_its = 300
+
+  start_time = 0.0
+  end_time = 0.5
+  dtmax = 1.0
+
+  [./TimeStepper]
+#	type = SolutionTimeAdaptiveDT
+    type = ConstantDT
+    dt = 0.01
+  [../]
 []
 
 [Outputs]
-  print_linear_residuals = false
-  exodus = true
+	print_linear_residuals = false
+    exodus = true
 []
 
 [Functions]

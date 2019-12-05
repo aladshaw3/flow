@@ -1,31 +1,31 @@
-# This input file tests outflow boundary conditions for the incompressible NS equations.
+# This input file tests various options for the incompressible NS equations in a channel.
+
+#NEED TO ADD THE PSPG stabilization method!!!
 
 [GlobalParams]
-  gravity = '0 0 0'
-  integrate_p_by_parts = true
+  gravity = '0 0 0'				#gravity accel for body force
+  integrate_p_by_parts = true	#how to include the pressure gradient term (not sure what it does, but solves when true)
+  supg = true 					#activates SUPG stabilization
+  alpha = 0.1 					#stabilization multiplicative correction factor (0 < alpha < 1)
+  laplace = true				#whether or not viscous term is in laplace form
+  convective_term = true		#whether or not to include advective/convective term
+  transient_term = false		#whether or not to include time derivative in supg correction (may hurt convergence and stability)
 []
 
 [Mesh]
-  type = GeneratedMesh
-  dim = 2
-  xmin = -2.0
-  xmax = 5.0
-  ymin = -2.0
-  ymax = 2.0
-  nx = 30
-  ny = 10
-  elem_type = QUAD9
+  file = 2D-Flow-Converted.unv
+  boundary_name = 'inlet outlet top bottom object'
 []
 
 
 [Variables]
   [./vel_x]
-    order = SECOND
+    order = FIRST
     family = LAGRANGE
     initial_condition = 0
   [../]
   [./vel_y]
-    order = SECOND
+    order = FIRST
     family = LAGRANGE
     initial_condition = 0
   [../]
@@ -37,6 +37,7 @@
 []
 
 [Kernels]
+  #Continuity Equ
   [./mass]
     type = INSMass
     variable = p
@@ -45,6 +46,7 @@
     p = p
   [../]
 
+  #Conservation of momentum equ in x (with time derivative)
   [./x_momentum_time]
     type = INSMomentumTimeDerivative
     variable = vel_x
@@ -58,6 +60,7 @@
     component = 0
   [../]
 
+  #Conservation of momentum equ in y (with time derivative)
   [./y_momentum_time]
     type = INSMomentumTimeDerivative
     variable = vel_y
@@ -76,19 +79,19 @@
   [./x_no_slip]
     type = DirichletBC
     variable = vel_x
-    boundary = 'top bottom'
+    boundary = 'top bottom object'
     value = 0.0
   [../]
   [./y_no_slip]
     type = DirichletBC
     variable = vel_y
-    boundary = 'left top bottom'
+    boundary = 'inlet top bottom object'
     value = 0.0
   [../]
   [./x_inlet]
     type = FunctionDirichletBC
     variable = vel_x
-    boundary = 'left'
+    boundary = 'inlet'
     function = 'inlet_func'
   [../]
 []
@@ -98,7 +101,8 @@
     type = GenericConstantMaterial
     block = 0
     prop_names = 'rho mu'
-    prop_values = '1  1'
+    #              kg/m^3  kg/m/s    #VALUES FOR WATER
+    prop_values = '1000.0  0.001'
   [../]
 []
 
@@ -106,17 +110,19 @@
   [./SMP_PJFNK]
     type = SMP
     full = true
-    solve_type = pjfnk
+    solve_type = newton   #newton solver works faster when using very good preconditioner 
   [../]
 []
 
 [Executioner]
   type = Transient
-  scheme = bdf2
+  scheme = implicit-euler
   petsc_options = '-snes_converged_reason'
   petsc_options_iname ='-ksp_type -pc_type -sub_pc_type -snes_max_it -sub_pc_factor_shift_type -pc_asm_overlap -snes_atol -snes_rtol'
   petsc_options_value = 'gmres asm lu 100 NONZERO 2 1E-14 1E-12'
-  line_search = bt
+
+  #NOTE: turning off line search can help converge for high Renolds number
+  line_search = none
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-4
   nl_rel_step_tol = 1e-10
@@ -126,12 +132,12 @@
   l_max_its = 300
 
   start_time = 0.0
-  end_time = 0.5
-  dtmax = 1.0
+  end_time = 100.0
+  dtmax = 0.5
 
   [./TimeStepper]
-#	type = SolutionTimeAdaptiveDT
-    type = ConstantDT
+	type = SolutionTimeAdaptiveDT
+#    type = ConstantDT
     dt = 0.01
   [../]
 []
