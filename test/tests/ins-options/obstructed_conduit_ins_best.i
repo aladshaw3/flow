@@ -1,15 +1,36 @@
 # This input file tests various options for the incompressible NS equations in a channel.
 
-#NEED TO ADD THE PSPG stabilization method!!!
+# CONVERGES WELL
+
+# NOTES
+# -------
+# There are multiple types of stabilization possible in incompressible
+# Navier Stokes. The user can specify supg = true to apply streamline
+# upwind petrov-galerkin stabilization to the momentum equations. This
+# is most useful for high Reynolds numbers, e.g. when inertial effects
+# dominate over viscous effects. The user can also specify pspg = true
+# to apply pressure stabilized petrov-galerkin stabilization to the mass
+# equation. PSPG is a form of Galerkin Least Squares. This stabilization
+# allows equal order interpolations to be used for pressure and velocity.
+# Finally, the alpha parameter controls the amount of stabilization.
+# For PSPG, decreasing alpha leads to increased accuracy but may induce
+# spurious oscillations in the pressure field. Some numerical experiments
+# suggest that alpha between .1 and 1 may be optimal for accuracy and
+# robustness.
+
+# Parameters given below provide the best tested compromise of stability and accuracy
+
+# NOTE: If you want an approximate steady-state flow profile, use MAXIMUM STABILITY options (alpha = 1.0 and all set to true)
 
 [GlobalParams]
   gravity = '0 0 0'				#gravity accel for body force
   integrate_p_by_parts = true	#how to include the pressure gradient term (not sure what it does, but solves when true)
-  supg = true 					#activates SUPG stabilization
-  alpha = 0.1 					#stabilization multiplicative correction factor (0 < alpha < 1)
+  supg = true 					#activates SUPG stabilization (excellent stability, always necessary)
+  pspg = true					#activates PSPG stabilization for pressure term (excellent stability, lower accuracy)
+  alpha = 0.1 					#stabilization multiplicative correction factor (0.1 < alpha <= 1) [lower value improves accuracy]
   laplace = true				#whether or not viscous term is in laplace form
   convective_term = true		#whether or not to include advective/convective term
-  transient_term = false		#whether or not to include time derivative in supg correction (may hurt convergence and stability)
+  transient_term = true			#whether or not to include time derivative in supg correction (sometimes needed)
 []
 
 [Mesh]
@@ -132,12 +153,12 @@
   l_max_its = 300
 
   start_time = 0.0
-  end_time = 100.0
+  end_time = 0.05
   dtmax = 0.5
 
   [./TimeStepper]
-	type = SolutionTimeAdaptiveDT
-#    type = ConstantDT
+#	type = SolutionTimeAdaptiveDT
+    type = ConstantDT
     dt = 0.01
   [../]
 []
