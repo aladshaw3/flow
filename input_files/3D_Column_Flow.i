@@ -28,7 +28,7 @@
   integrate_p_by_parts = true	#how to include the pressure gradient term (not sure what it does, but solves when true)
   supg = true 					#activates SUPG stabilization (excellent stability, always necessary)
   pspg = true					#activates PSPG stabilization for pressure term (excellent stability, lower accuracy)
-  alpha = 1.0 					#stabilization multiplicative correction factor (0.1 < alpha <= 1) [lower value improves accuracy]
+  alpha = 2.0 					#stabilization multiplicative correction factor (0.1 < alpha <= 1) [lower value improves accuracy]
   laplace = true				#whether or not viscous term is in laplace form
   convective_term = true		#whether or not to include advective/convective term
   transient_term = true			#whether or not to include time derivative in supg correction (sometimes needed)
@@ -141,6 +141,13 @@
     boundary = 'inlet'
     function = 'inlet_func'
   [../]
+
+#  [./p_outlet]
+#    type = DirichletBC
+#    variable = p
+#    boundary = 'outlet'
+#    value = 0.0
+#  [../]
 []
 
 [Materials]
@@ -163,13 +170,13 @@
 
 [Executioner]
   type = Transient
-  scheme = bdf2
+  scheme = implicit-euler
   petsc_options = '-snes_converged_reason'
   petsc_options_iname ='-ksp_type -pc_type -sub_pc_type -snes_max_it -sub_pc_factor_shift_type -pc_asm_overlap -snes_atol -snes_rtol'
   petsc_options_value = 'gmres asm lu 100 NONZERO 2 1E-14 1E-12'
 
   #NOTE: turning off line search can help converge for high Renolds number
-  line_search = basic
+  line_search = none
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-4
   nl_rel_step_tol = 1e-10
@@ -185,7 +192,7 @@
   [./TimeStepper]
 	type = SolutionTimeAdaptiveDT
 #    type = ConstantDT
-    dt = 0.01
+    dt = 0.1
   [../]
 []
 
@@ -199,7 +206,7 @@
     type = ParsedFunction
     #Parabola that has velocity of zero at y=top and=bot, with maximum at y=middle
     #vz = a*x^2 + b*y^2 + c	solve for a, b, and c
-    value = '(-(1/25) * x^2 - (1/25) * y^2 + 1)*5.0'   #in cm/s
+    value = '(-(1/25) * x^2 - (1/25) * y^2 + 1)*1.0'   #in cm/s
   [../]
 []
 
@@ -215,8 +222,8 @@
   [./Markers]
     [./errorfrac]
     type = ErrorFractionMarker
-    refine = 0.5
-    coarsen = 0.5
+    refine = 0.0
+    coarsen = 0.0
     indicator = error
     [../]
   [../]
