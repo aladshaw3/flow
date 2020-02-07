@@ -27,8 +27,8 @@
   gravity = '0 0 0'				#gravity accel for body force
   integrate_p_by_parts = true	#how to include the pressure gradient term (not sure what it does, but solves when true)
   supg = false 					#activates SUPG stabilization (excellent stability, always necessary)
-  pspg = false					#activates PSPG stabilization for pressure term (excellent stability, lower accuracy)
-  alpha = 10.0 					#stabilization multiplicative correction factor (0.1 < alpha <= 1) [lower value improves accuracy]
+  pspg = true					#activates PSPG stabilization for pressure term (excellent stability, lower accuracy)
+  alpha = 0.1 					#stabilization multiplicative correction factor (0.1 < alpha <= 1) [lower value improves accuracy]
   laplace = true				#whether or not viscous term is in laplace form
   convective_term = false		#whether or not to include advective/convective term
   transient_term = false			#whether or not to include time derivative in supg correction (sometimes needed)
@@ -135,7 +135,7 @@
   petsc_options_value = 'gmres asm lu 100 NONZERO 2 1E-14 1E-12'
 
   #NOTE: turning off line search can help converge for high Renolds number
-  line_search = none
+  line_search = bt
   nl_rel_tol = 1e-6
   nl_abs_tol = 1e-4
   nl_rel_step_tol = 1e-10
