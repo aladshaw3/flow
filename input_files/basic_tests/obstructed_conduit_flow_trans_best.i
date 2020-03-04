@@ -21,7 +21,7 @@
 # Parameters given below provide the best tested compromise of stability and accuracy
 
 # NOTE: If you want an approximate steady-state flow profile, use MAXIMUM STABILITY options (alpha = 1.0 and all set to true)
-#       and simulate for many time steps. 
+#       and simulate for many time steps.
 
 [GlobalParams]
   gravity = '0 0 0'				#gravity accel for body force
@@ -123,8 +123,9 @@
     type = GenericConstantMaterial
     block = 0
     prop_names = 'rho mu'
-    #              kg/m^3  kg/m/s    #VALUES FOR WATER
-    prop_values = '1000.0  0.001'
+    #              kg/m^3  kg/m/s
+    #prop_values = '1000.0  0.001'   #VALUES FOR WATER
+    prop_values = '1.225  1.81E-5'   #VALUES FOR AIR
   [../]
 []
 
@@ -132,7 +133,7 @@
   [./SMP_PJFNK]
     type = SMP
     full = true
-    solve_type = newton   #newton solver works faster when using very good preconditioner 
+    solve_type = newton   #newton solver works faster when using very good preconditioner
   [../]
 []
 
