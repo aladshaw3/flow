@@ -41,6 +41,12 @@
 
 
 [Variables]
+  [./conc]
+    order = SECOND       #Needs slope limiting stabilization (should be an example in MOOSE modules)
+    #order = CONSTANT
+    family = MONOMIAL
+    initial_condition = 0.0
+  [../]
   [./vel_x]
     order = FIRST
     family = LAGRANGE
@@ -58,7 +64,31 @@
   [../]
 []
 
+[AuxVariables]
+
+	[./vel_z]
+    order = FIRST
+    family = LAGRANGE
+		initial_condition = 0
+	[../]
+
+[] #END AuxVariables
+
 [Kernels]
+  #Mass conservation kernels
+  [./conc_dot]
+    type = CoefTimeDerivative
+    variable = conc
+    Coefficient = 1.0
+  [../]
+  [./conc_gadv]
+    type = GConcentrationAdvection
+    variable = conc
+    ux = vel_x
+    uy = vel_y
+    uz = vel_z
+  [../]
+
   #Continuity Equ
   [./mass]
     type = INSMass
@@ -97,6 +127,18 @@
   [../]
 []
 
+[DGKernels]
+    #Mass conservation dgkernels
+    [./conc_dgadv]
+      type = DGConcentrationAdvection
+		  variable = conc
+		  ux = vel_x
+		  uy = vel_y
+		  uz = vel_z
+    [../]
+
+[] #END DGKernels
+
 [BCs]
   [./x_no_slip]
     type = DirichletBC
@@ -115,6 +157,27 @@
     variable = vel_x
     boundary = 'inlet'
     function = 'inlet_func'
+  [../]
+
+  [./conc_FluxIn]
+    type = DGConcentrationFluxBC
+    variable = conc
+    boundary = 'inlet'
+		u_input = 1.0
+		ux = vel_x
+		uy = vel_y
+		uz = vel_z
+  [../]
+
+  [./conc_FluxOut]
+    type = DGConcentrationFluxBC
+    variable = conc
+    #boundary = 'outlet top bottom object'   #Unsure about BCs at walls
+    boundary = 'outlet'
+    u_input = 0.0
+    ux = vel_x
+    uy = vel_y
+    uz = vel_z
   [../]
 []
 
